@@ -5,7 +5,7 @@
   --paper-2: #efeadf;
   --ink: #1d1c1a;
   --ink-2: #4a4742;
-  --ink-3: #7a766f;
+  --ink-3: #6b675f;
   --rule: #d8d2c4;
   --marker: #ffe45c;
   --marker-2: #fff3a8;
@@ -71,8 +71,8 @@ small, .small { font-size: 0.86rem; }
 .panel-head p { margin: 0; }
 
 /* Inputs */
-.doc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-@media (max-width: 800px) { .doc-grid { grid-template-columns: 1fr; } }
+.doc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; min-height: 40rem; }
+@media (max-width: 800px) { .doc-grid { grid-template-columns: 1fr; min-height: 78rem; } }
 .doc { border: 1px solid var(--rule); border-radius: var(--radius); background: #fffdf7; padding: .75rem; display: flex; flex-direction: column; gap: .5rem; }
 .doc.is-yours { border-color: var(--ink); }
 .doc-head { display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; }
