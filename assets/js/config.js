@@ -1,6 +1,6 @@
 // Central configuration. Bobby replaces STRIPE_PAYMENT_LINK and PRICE_LABEL before launch.
 
-export const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/PLACEHOLDER';
+export const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/8x23cx5zG4Gog7aedc8ww05';
 export const PRICE_LABEL = '$39';
 export const PRODUCT_NAME = 'Page Content Gap';
 
