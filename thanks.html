@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thanks — Page Content Gap</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+  <main class="page">
+    <p class="kicker">Page Content Gap</p>
+    <h1 id="title">Checking your payment…</h1>
+
+    <div class="card" id="card">
+      <p id="message">One moment.</p>
+    </div>
+
+    <div class="card warn">
+      <h2 style="margin-top:0">The unlock lives in this browser</h2>
+      <p>The unlock is stored in this browser only (local storage). If you clear site data, use private browsing, another browser, or another device, the tool will be locked again.</p>
+      <p><strong>Keep your Stripe receipt.</strong> If you lose the unlock, reply to the receipt email and we'll help (recovery key or manual re-unlock). 14-day refund, no questions asked.</p>
+    </div>
+
+    <div class="actions">
+      <a class="btn btn-primary btn-large" href="./">Open the tool</a>
+      <a class="btn btn-ghost" href="disclaimer.html">Disclaimer, privacy &amp; terms</a>
+    </div>
+  </main>
+
+  <script type="module">
+    import { setUnlock, isUnlocked, getUnlock, isValidSessionId } from './assets/js/license.js';
+
+    const params = new URLSearchParams(location.search);
+    const sessionId = (params.get('session_id') || '').trim();
+    const title = document.getElementById('title');
+    const card = document.getElementById('card');
+    const message = document.getElementById('message');
+
+    function show(kind, heading, html) {
+      title.textContent = heading;
+      card.className = 'card ' + kind;
+      message.innerHTML = html;
+    }
+
+    if (sessionId && isValidSessionId(sessionId)) {
+      const ok = setUnlock(sessionId);
+      if (ok) {
+        // Drop the session id from the address bar so it isn't shared by accident.
+        try { history.replaceState(null, '', location.pathname); } catch {}
+        show('ok', 'Thank you — unlocked in this browser.',
+          'The full report is now available in this browser. Return to the tool tab (it unlocks without a reload) or open it below.<br><small class="muted">Reference: <code>' + sessionId.replace(/[<>&]/g, '') + '</code></small>');
+      } else {
+        show('warn', 'Paid, but this browser blocked storage.',
+          'Your payment went through, but this browser did not let us save the unlock (private mode or storage disabled). Open the tool in a normal window and reply to your Stripe receipt if it stays locked.');
+      }
+    } else if (isUnlocked()) {
+      const u = getUnlock();
+      show('ok', 'Already unlocked in this browser.',
+        'This browser was unlocked' + (u && u.at ? ' on ' + new Date(u.at).toLocaleDateString() : '') + '. Open the tool below.');
+    } else if (sessionId) {
+      show('warn', 'That link doesn\'t look like a Stripe checkout.',
+        'The <code>session_id</code> in the address is not a Stripe Checkout session. Use the link Stripe sent you to after paying, or reply to your receipt email for help.');
+    } else {
+      show('warn', 'Nothing to unlock here.',
+        'This page is where Stripe sends you after payment. Visiting it directly does not unlock anything. If you have paid and lost the unlock, reply to your Stripe receipt email.');
+    }
+  </script>
+</body>
+</html>

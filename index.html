@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page Content Gap — Competitor On-Page Phrase Gap Analyzer (No Ahrefs Needed)</title>
+  <meta name="description" content="Paste your page and 1–3 competitor pages. See the phrases, headings and entities they cover that you don't. Runs entirely in your browser. $39 once.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Page Content Gap — Competitor On-Page Phrase Gap Analyzer">
+  <meta property="og:description" content="Paste your page + 3 competitors. See the phrases, headings and entities they cover that you don't. In-browser, private, $39 once.">
+  <meta property="og:url" content="https://evan-thedev.github.io/page-content-gap/">
+  <meta property="og:image" content="https://evan-thedev.github.io/page-content-gap/assets/og-image.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Page Content Gap — Competitor On-Page Phrase Gap Analyzer">
+  <meta name="twitter:description" content="Paste your page + 3 competitors. See the phrases, headings and entities they cover that you don't. In-browser, private, $39 once.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#inputs">Skip to inputs</a>
+
+  <header class="hero">
+    <div class="wrap">
+      <p class="kicker">Page Content Gap</p>
+      <h1>See what your competitors' pages cover that yours doesn't.</h1>
+      <p class="lede">Paste your page and 1–3 competitor pages. Get the phrases, headings, and named terms they use that you never do — ranked, with per-competitor counts, exportable to CSV or Markdown.</p>
+      <p class="privacy-line" id="privacy-line">Runs entirely in your browser. Nothing you paste leaves this tab.</p>
+      <div class="hero-actions">
+        <button type="button" class="btn btn-secondary" id="btn-demo">Load demo pages</button>
+        <button type="button" class="btn btn-accent" id="btn-hero-unlock" data-unlock="hero">Unlock full report — <span data-price>$39</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" id="main">
+    <section id="inputs" class="panel inputs" aria-labelledby="inputs-title">
+      <div class="panel-head">
+        <h2 id="inputs-title">1. Paste your pages</h2>
+        <p class="muted">Plain text (select all, copy) or HTML (View Source). One competitor is enough; three is best. Empty competitors are ignored. v1 does not fetch URLs.</p>
+      </div>
+      <div class="doc-grid" id="doc-grid"></div>
+
+      <details class="settings" id="settings">
+        <summary>Settings</summary>
+        <div class="settings-grid">
+          <label class="field">
+            <span>Extra stopwords <small class="muted">(one per line; ignored everywhere)</small></span>
+            <textarea id="extra-stopwords" rows="4" spellcheck="false" placeholder="e.g.&#10;guide&#10;best"></textarea>
+          </label>
+          <label class="field">
+            <span>Brand / exclusion list <small class="muted">(any phrase containing these words is dropped)</small></span>
+            <textarea id="exclusions" rows="4" spellcheck="false" placeholder="e.g.&#10;Acme&#10;DeskLab"></textarea>
+            <button type="button" class="btn btn-small btn-ghost" id="btn-suggest-exclusions">Add competitor labels</button>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="detect-headings" checked>
+            <span>Detect headings in plain text (Markdown <code>#</code> and Title Case lines)</span>
+          </label>
+          <p class="muted small">Known v1 behaviour: exact tokens only (<code>desk</code> and <code>desks</code> are separate rows); hyphenated terms split (<code>e-commerce</code> → <code>commerce</code>); English stopwords only.</p>
+        </div>
+      </details>
+
+      <div class="analyze-bar">
+        <button type="button" class="btn btn-primary btn-large" id="btn-analyze">Analyze</button>
+        <span class="status" id="status" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section id="results" class="panel results" aria-labelledby="results-title" hidden>
+      <div class="panel-head">
+        <h2 id="results-title">2. Report</h2>
+        <div class="export-bar" id="export-bar">
+          <button type="button" class="btn btn-secondary" id="btn-export-csv" data-gated="export">Export CSV</button>
+          <button type="button" class="btn btn-secondary" id="btn-copy-md" data-gated="export">Copy Markdown</button>
+          <button type="button" class="btn btn-ghost" id="btn-scenarios" data-gated="scenarios">Scenarios</button>
+        </div>
+      </div>
+
+      <div id="notices" class="notices"></div>
+      <div id="summary" class="summary"></div>
+
+      <div class="tabs" role="tablist" aria-label="Report sections" id="tabs"></div>
+      <div id="tab-panels"></div>
+    </section>
+
+    <section class="panel faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">FAQ</h2>
+      <dl>
+        <dt>Does it fetch the URL for me?</dt>
+        <dd>Not in v1. Open the page, select all, copy, paste — or paste the HTML from View Source. Browser fetches are blocked by most sites, and we won't route your content through a proxy.</dd>
+        <dt>Where does my content go?</dt>
+        <dd>Nowhere. Open the Network tab: after the page loads there are no requests until you click Buy. Analysis runs in your browser.</dd>
+        <dt>Is the unlock tied to an account?</dt>
+        <dd>No accounts. The unlock is stored in the browser you buy from. If you clear site data or switch devices, it locks again — reply to your Stripe receipt and we'll sort you out. See the <a href="disclaimer.html">disclaimer</a>.</dd>
+        <dt>Does it use search volume?</dt>
+        <dd>No. It compares page text. It tells you what competitors cover, not what people search for.</dd>
+        <dt>Will this make my page rank?</dt>
+        <dd>No tool can promise that. It shows coverage gaps against pages that currently rank; what you do with them, and everything else Google weighs, is up to you.</dd>
+        <dt>Refunds?</dt>
+        <dd>14 days, no questions asked.</dd>
+      </dl>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p class="footer-disclaimer" id="footer-disclaimer"></p>
+      <p class="footer-links">
+        <span id="unlock-status"></span>
+        <a href="disclaimer.html">Disclaimer, privacy &amp; terms</a>
+        <a href="https://github.com/evan-thedev/page-content-gap" rel="noopener">Source on GitHub</a>
+      </p>
+    </div>
+  </footer>
+
+  <dialog id="unlock-modal" class="modal" aria-labelledby="unlock-title">
+    <form method="dialog" class="modal-body">
+      <button type="submit" class="modal-close" aria-label="Close">×</button>
+      <p class="kicker">Full report</p>
+      <h2 id="unlock-title">Unlock the full Page Content Gap report</h2>
+      <p id="unlock-context" class="muted"></p>
+      <ul class="includes">
+        <li>Full gap-phrase table — up to 100 rows, 1–3 word phrases, filters and sorting</li>
+        <li>Heading gaps grouped by topic, with your closest heading beside each</li>
+        <li>Entity-style gaps (capitalized names + curated list)</li>
+        <li>Suggested H2s derived from competitor headings — no AI</li>
+        <li>"Only you" section and summary coverage scores</li>
+        <li>CSV and Markdown export</li>
+        <li>Saved local scenarios (20, JSON import/export)</li>
+      </ul>
+      <p class="modal-disclaimer" id="modal-disclaimer"></p>
+      <p class="modal-note" id="modal-per-browser"></p>
+      <p class="modal-note" id="modal-refund"></p>
+      <div class="modal-actions">
+        <a class="btn btn-accent btn-large" id="btn-buy" href="#" target="_blank" rel="noopener">Buy — <span data-price>$39</span> one-time</a>
+        <button type="submit" class="btn btn-ghost">Not now</button>
+      </div>
+      <p class="small muted">Payment by Stripe. After paying you are sent back here and this browser is unlocked. <a href="disclaimer.html">Full disclaimer</a>.</p>
+    </form>
+  </dialog>
+
+  <dialog id="scenarios-modal" class="modal" aria-labelledby="scenarios-title">
+    <div class="modal-body">
+      <form method="dialog"><button type="submit" class="modal-close" aria-label="Close">×</button></form>
+      <p class="kicker">Local only</p>
+      <h2 id="scenarios-title">Scenarios</h2>
+      <p class="muted small">Saved in this browser's local storage: inputs plus settings. Nothing is uploaded. Max 20.</p>
+      <div class="scenario-save">
+        <input type="text" id="scenario-name" placeholder="Scenario name" maxlength="80" aria-label="Scenario name">
+        <button type="button" class="btn btn-primary" id="btn-scenario-save">Save current</button>
+      </div>
+      <ul id="scenario-list" class="scenario-list"></ul>
+      <div class="scenario-io">
+        <button type="button" class="btn btn-secondary btn-small" id="btn-scenario-export">Export JSON</button>
+        <label class="btn btn-secondary btn-small file-btn">Import JSON<input type="file" id="scenario-import" accept="application/json,.json" hidden></label>
+      </div>
+      <p class="status small" id="scenario-status" role="status"></p>
+    </div>
+  </dialog>
+
+  <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
