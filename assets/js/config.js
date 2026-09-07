@@ -26,7 +26,8 @@ export const CAPS = {
 
 export const LIMITS = {
   maxChars: 200000,
-  shortDocWords: 50,
+  shortDocWords: 50, // "very short — results will be noisy"
+  thinDocWords: 150, // "short — gap counts will be thin" (still analyzed)
   workerThresholdWords: 50000,
   maxCompetitors: 3,
 };

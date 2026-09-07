@@ -132,6 +132,8 @@ function updateDocFoot(d) {
     hint.textContent = 'This looks like HTML — switch the format to HTML for cleaner results.';
   } else if (n < LIMITS.shortDocWords) {
     hint.textContent = 'Very short — results will be noisy.';
+  } else if (n < LIMITS.thinDocWords) {
+    hint.textContent = `Short (${fmt(n)} words) — gap counts will be thin. Still analyzed.`;
   }
 }
 
@@ -275,7 +277,8 @@ async function runAnalysis() {
   try {
     const extracted = extractAll();
     state.extracted = extracted;
-    const input = { ...extracted, settings: { extraStopwords: state.settings.extraStopwords, exclusions: state.settings.exclusions }, data: state.data };
+    // Locked → the engine returns only the teaser rows plus counts; nothing locked reaches the page.
+    const input = { ...extracted, teaser: !state.unlocked, settings: { extraStopwords: state.settings.extraStopwords, exclusions: state.settings.exclusions }, data: state.data };
     const totalWords = extracted.yours.words + extracted.competitors.reduce((s, d) => s + d.words, 0);
     let result;
     if (totalWords > LIMITS.workerThresholdWords && typeof Worker !== 'undefined') {
@@ -324,7 +327,7 @@ function openUnlockModal(feature) {
   const ctx = $('#unlock-context');
   const r = state.result;
   const what = FEATURE_LABELS[feature] || 'the full report';
-  const counts = r ? ` This report has ${fmt(r.gapTotal)} gap phrases, ${fmt(r.headingGaps.length)} heading gaps, and ${fmt(r.entityTotal)} entity-style gaps waiting.` : '';
+  const counts = r ? ` This report has ${fmt(r.gapTotal)} gap phrases, ${fmt(r.headingGapTotal)} heading gaps, and ${fmt(r.entityTotal)} entity-style gaps waiting.` : '';
   ctx.textContent = `Unlock ${what} and everything below, in this browser, for a one-time ${PRICE_LABEL}.${counts}`;
   const dlg = $('#unlock-modal');
   if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
@@ -335,7 +338,13 @@ function refreshUnlockState() {
   if (now !== state.unlocked) {
     state.unlocked = now;
     renderUnlockStatus();
-    if (state.result) renderResults();
+    if (state.result) {
+      // The teaser result deliberately lacks the locked rows, so unlocking recomputes the full
+      // report; removing the unlock recomputes the teaser so the full rows leave memory.
+      state.result = null;
+      $('#results').hidden = true;
+      runAnalysis();
+    }
   }
 }
 
@@ -381,8 +390,9 @@ function renderNotices(r) {
   for (const d of all) {
     for (const n of d.notices || []) items.push(`${d.label}: ${n}`);
     if (d.words < LIMITS.shortDocWords) items.push(`${d.label}: very short (${d.words} words) — results will be noisy.`);
+    else if (d.words < LIMITS.thinDocWords) items.push(`${d.label}: short (${d.words} words) — gap counts will be thin; fuller pages give better results.`);
   }
-  if (!r.headingGaps.length && r.scores.totalTopics === 0) items.push('No competitor headings found. For plain text, keep "Detect headings" on or use Markdown # headings; for HTML, paste the full source.');
+  if (!r.headingGapTotal && !r.teaser && r.scores.totalTopics === 0) items.push('No competitor headings found. For plain text, keep "Detect headings" on or use Markdown # headings; for HTML, paste the full source.');
   $('#notices').innerHTML = items.map((t) => `<div class="notice">${esc(t)}</div>`).join('');
 }
 
@@ -405,15 +415,15 @@ function renderSummary(r) {
       : stat('Phrase coverage', r.scores.phraseCoverage == null ? '—' : `${r.scores.phraseCoverage}%`, `of ${fmt(r.scores.eligible)} eligible competitor phrases`),
     locked ? lockedStat('Heading coverage', '00.0%', 'share of competitor heading topics you cover')
       : stat('Heading coverage', r.scores.headingCoverage == null ? '—' : `${r.scores.headingCoverage}%`, `${fmt(r.scores.matchedTopics)} of ${fmt(r.scores.totalTopics)} topics`),
-    stat('Gaps found', fmt(r.gapTotal), `${fmt(r.headingGaps.length)} heading · ${fmt(r.entityTotal)} entity · ${fmt(r.suggestedH2s.length)} suggested H2s`),
+    stat('Gaps found', fmt(r.gapTotal), `${fmt(r.headingGapTotal)} heading · ${fmt(r.entityTotal)} entity · ${fmt(r.suggestedH2Total)} suggested H2s`),
   ].join('');
 }
 
 function tabCount(r, id) {
   switch (id) {
     case 'gaps': return r.gapTotal;
-    case 'headings': return r.headingGaps.length;
-    case 'h2s': return r.suggestedH2s.length;
+    case 'headings': return r.headingGapTotal;
+    case 'h2s': return r.suggestedH2Total;
     case 'entities': return r.entityTotal;
     case 'shared': return r.sharedTotal;
     case 'onlyyou': return r.onlyYouTotal;
@@ -435,8 +445,8 @@ function renderActiveTab() {
   let html = '';
   switch (state.tab) {
     case 'gaps': html = renderGapsTab(r); break;
-    case 'headings': html = state.unlocked ? renderHeadingsTab(r) : lockedPanel('headings', r.headingGaps.length, 'heading gaps', 'Competitor H1–H3 topics your page does not cover, with your closest heading beside each.'); break;
-    case 'h2s': html = state.unlocked ? renderH2sTab(r) : lockedPanel('h2s', r.suggestedH2s.length, 'suggested H2s', 'Competitor sections you are missing, ready for a brief. Derived from their headings — no AI.'); break;
+    case 'headings': html = state.unlocked ? renderHeadingsTab(r) : lockedPanel('headings', r.headingGapTotal, 'heading gaps', 'Competitor H1–H3 topics your page does not cover, with your closest heading beside each.'); break;
+    case 'h2s': html = state.unlocked ? renderH2sTab(r) : lockedPanel('h2s', r.suggestedH2Total, 'suggested H2s', 'Competitor sections you are missing, ready for a brief. Derived from their headings — no AI.'); break;
     case 'entities': html = state.unlocked ? renderEntitiesTab(r) : lockedPanel('entities', r.entityTotal, 'entity-style gaps', 'Capitalized names and curated tools/brands/standards competitors mention that you do not.'); break;
     case 'shared': html = renderSharedTab(r); break;
     case 'onlyyou': html = state.unlocked ? renderOnlyYouTab(r) : lockedPanel('onlyyou', r.onlyYouTotal, 'phrases only you use', 'Terms frequent on your page and absent from every competitor — off-topic drift or a unique angle.'); break;
@@ -459,9 +469,9 @@ function lockedPanel(feature, count, noun, description) {
 function lockedBand(r, moreGaps) {
   const items = [
     moreGaps > 0 ? `<span><strong>${fmt(moreGaps)}</strong> more gap phrases</span>` : '',
-    `<span><strong>${fmt(r.headingGaps.length)}</strong> heading gaps</span>`,
+    `<span><strong>${fmt(r.headingGapTotal)}</strong> heading gaps</span>`,
     `<span><strong>${fmt(r.entityTotal)}</strong> entity-style gaps</span>`,
-    `<span><strong>${fmt(r.suggestedH2s.length)}</strong> suggested H2s</span>`,
+    `<span><strong>${fmt(r.suggestedH2Total)}</strong> suggested H2s</span>`,
     '<span>CSV / Markdown export</span>',
   ].filter(Boolean).join('');
   return `
@@ -528,6 +538,7 @@ function renderGapsTab(r) {
       <span class="muted">${fmt(rows.length)} of ${fmt(r.gapTotal)} rows${r.gapTotal > CAPS.gapRows ? ` (top ${CAPS.gapRows})` : ''}</span>
       <button type="button" class="btn btn-small btn-ghost" id="f-reset">Reset</button>
     </div>` : `<p class="muted small">Free teaser: the first ${CAPS.teaserGapRows} of ${fmt(r.gapTotal)} gap phrases, in the same order as the full table. Coverage shows how many competitors use each phrase.</p>`;
+  const help = '<p class="muted small help-line">Exact tokens only — plurals and word stems are not folded (<code>desk</code> ≠ <code>desks</code>, <code>manage</code> ≠ <code>management</code>). Read neighbouring rows together.</p>';
 
   const head = `
     <tr>
@@ -555,7 +566,7 @@ function renderGapsTab(r) {
     ? `<div class="table-wrap"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>`
     : `<div class="empty">No gap phrases${state.unlocked ? ' match these filters' : ''}. ${r.gapTotal ? '' : 'Your page already covers every eligible competitor phrase — or the inputs are very short.'}</div>`;
   const band = state.unlocked ? '' : lockedBand(r, r.gapTotal - shown.length);
-  return filters + table + band;
+  return filters + help + table + band;
 }
 
 function renderSharedTab(r) {

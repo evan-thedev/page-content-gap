@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { analyze } from '../assets/js/analyze.js';
 import { extractText } from '../assets/js/extract.js';
-import { analyzeFixture, loadData } from './helpers.mjs';
+import { analyzeFixture, loadData, loadFixtureDocs } from './helpers.mjs';
 
 // Deterministic pseudo-random generator so the perf test is reproducible.
 function rng(seed) {
@@ -62,6 +62,35 @@ test('analyze: result is structured-clone safe and carries counts for locked ban
   assert.ok(result.shared.slice(0, 5).some((r) => r.term === 'desk'));
   assert.ok(result.headingGaps.some((h) => h.heading === 'Cable Management' && h.yourClosest.sim < 0.5));
   assert.ok(result.suggestedH2s.some((h) => h.text === 'Cable Management'));
+});
+
+test('analyze: teaser mode carries only the free rows plus counts (DevTools-safe)', () => {
+  const full = analyzeFixture();
+  const { yours, competitors } = loadFixtureDocs();
+  const teaser = analyze({ yours, competitors, teaser: true, data: loadData() });
+  assert.equal(teaser.teaser, true);
+  assert.equal(teaser.gaps.length, 10);
+  assert.deepEqual(teaser.gaps.map((g) => g.term), full.gaps.slice(0, 10).map((g) => g.term));
+  assert.equal(teaser.shared.length, 5);
+  assert.deepEqual(teaser.headingGaps, []);
+  assert.deepEqual(teaser.suggestedH2s, []);
+  assert.deepEqual(teaser.entityGaps, []);
+  assert.deepEqual(teaser.onlyYou, []);
+  assert.equal(teaser.scores.phraseCoverage, null);
+  assert.equal(teaser.scores.headingCoverage, null);
+  // Counts survive so locked bands can show them.
+  assert.equal(teaser.gapTotal, full.gapTotal);
+  assert.equal(teaser.headingGapTotal, full.headingGaps.length);
+  assert.equal(teaser.suggestedH2Total, full.suggestedH2s.length);
+  assert.equal(teaser.entityTotal, full.entityTotal);
+  assert.equal(teaser.sharedTotal, full.sharedTotal);
+  assert.equal(teaser.onlyYouTotal, full.onlyYouTotal);
+  // No locked phrase leaks anywhere in the serialized teaser.
+  const json = JSON.stringify(teaser);
+  for (const g of full.gaps.slice(10)) assert.ok(!json.includes(`"${g.term}"`), `leaked gap: ${g.term}`);
+  for (const h of full.headingGaps) assert.ok(!json.includes(`"${h.heading}"`), `leaked heading: ${h.heading}`);
+  for (const e of full.entityGaps) assert.ok(!json.includes(`"${e.surface}"`), `leaked entity: ${e.surface}`);
+  for (const s of full.shared.slice(5)) assert.ok(!json.includes(`"term":"${s.term}"`), `leaked shared: ${s.term}`);
 });
 
 test('analyze: empty competitors are ignored; extra stopwords apply', () => {

@@ -18,10 +18,15 @@ export function collapseWhitespace(s) {
   return String(s ?? '').replace(/\s+/g, ' ').trim();
 }
 
-export function looksLikeUrl(text) {
-  const t = String(text ?? '').trim();
-  if (!t || /\s/.test(t)) return false;
+function isUrlToken(t) {
   return /^https?:\/\/\S+$/i.test(t) || /^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/i.test(t);
+}
+
+// True when the pasted text is nothing but one or more URLs (one per line). v1 never fetches.
+export function looksLikeUrl(text) {
+  const lines = String(text ?? '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) return false;
+  return lines.every((l) => !/\s/.test(l) && isUrlToken(l));
 }
 
 export function looksLikeHtml(text) {

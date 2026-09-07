@@ -2,7 +2,7 @@
 
 **Competitor on-page phrase gap analyzer — no Ahrefs needed.**
 
-Paste your page (HTML or plain text) and up to three competitor pages. See the phrases,
+Paste your page (HTML or plain text) and 1–3 competitor pages. See the phrases,
 headings, and entity-style terms they cover that you don't, ranked with per-competitor counts.
 Export the full report as CSV or Markdown.
 
@@ -21,7 +21,7 @@ Listing copy: [`LISTING.md`](LISTING.md). Terms: [`DISCLAIMER.md`](DISCLAIMER.md
 1. Open the site. Click **Load demo pages** to see a full example before pasting anything.
 2. **Your page** — paste plain text (open the page, select all, copy) or HTML (View Source).
    Toggle *Plain text* / *HTML* to match. Give it a label if you like.
-3. **Competitor 1–3** — same. Empty competitors are ignored. v1 does not fetch URLs; a textarea
+3. **Competitor 1–3** — same. One competitor is enough; three gives better coverage numbers. Empty competitors are ignored. v1 does not fetch URLs; a textarea
    containing only a URL shows paste instructions instead of running.
 4. **Analyze.** Results appear below:
    - **Free teaser:** word counts, the top 10 gap phrases (same order as the full table), the
@@ -48,6 +48,13 @@ Inputs and settings persist in `sessionStorage` for the tab; scenarios and the u
 - Entities are a heuristic (capitalized sequences + `assets/data/entities.json`), not a model.
 - Any single input over 200,000 characters is refused. Over 50,000 total words the analysis runs
   in a Web Worker so the tab stays responsive.
+- Documents under 150 words get a "short" warning (under 50: "very short"); they are still analyzed.
+- A textarea containing only URLs (one or more lines) is refused with paste instructions. There is
+  no fetch and no proxy.
+- While locked, the engine returns only the teaser rows plus counts (`analyze({ teaser: true })`).
+  The remaining gap phrases, heading gaps, entities and scores are never present in the page —
+  not in the DOM, not in JS state, not in the worker message — until the browser is unlocked,
+  at which point the report is recomputed.
 
 ## Analysis rules
 

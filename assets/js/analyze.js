@@ -97,12 +97,13 @@ export function analyze(input) {
   const onlyYouRows = onlyYou.slice(0, CAPS.onlyYouRows).map(plainRow);
 
   const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
-  return {
+  const result = {
     docs: {
       yours: { label: yours.label, words: yours.words, mode: yours.mode, notices: yours.notices || [] },
       competitors: competitors.map((d) => ({ label: d.label, words: d.words, mode: d.mode, notices: d.notices || [] })),
     },
     K: competitors.length,
+    teaser: false,
     gaps: gapRows,
     gapTotal: visible.length,
     gapsBeforeSubsumption,
@@ -111,7 +112,9 @@ export function analyze(input) {
     onlyYou: onlyYouRows,
     onlyYouTotal: onlyYou.length,
     headingGaps: headings.gaps,
+    headingGapTotal: headings.gaps.length,
     suggestedH2s: headings.suggestedH2s,
+    suggestedH2Total: headings.suggestedH2s.length,
     entityGaps: entities.gaps,
     entityTotal: entities.total,
     scores: {
@@ -130,5 +133,29 @@ export function analyze(input) {
     },
     settings: { extraStopwords: [...extraStopwords], exclusions: exclusionList },
     ms: Math.round(t1 - t0),
+  };
+  return input.teaser ? toTeaser(result) : result;
+}
+
+// Free-teaser result: only the rows the free UI may show, plus counts. Everything locked is
+// removed here so it never exists in the page (DOM, JS state, or worker message) while locked.
+export function toTeaser(result) {
+  return {
+    ...result,
+    teaser: true,
+    gaps: result.gaps.slice(0, CAPS.teaserGapRows),
+    shared: result.shared.slice(0, CAPS.teaserSharedRows),
+    onlyYou: [],
+    headingGaps: [],
+    suggestedH2s: [],
+    entityGaps: [],
+    scores: {
+      ...result.scores,
+      phraseCoverage: null,
+      headingCoverage: null,
+      eligible: null,
+      matchedTopics: null,
+      totalTopics: null,
+    },
   };
 }

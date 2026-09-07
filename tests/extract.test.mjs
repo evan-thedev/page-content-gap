@@ -65,6 +65,8 @@ test('extract: URL detection helper', () => {
   assert.ok(looksLikeUrl('https://example.com/page'));
   assert.ok(looksLikeUrl('www.example.com'));
   assert.ok(looksLikeUrl(' example.co.uk/path?q=1 '));
+  assert.ok(looksLikeUrl('https://a.com/x\nhttps://b.com/y\n\nwww.c.org'), 'a list of URLs is still URL-only');
+  assert.ok(!looksLikeUrl('https://a.com/x\nA real sentence about desks.'));
   assert.ok(!looksLikeUrl('Visit https://example.com for more'));
   assert.ok(!looksLikeUrl('Standing desks are great.'));
 });
